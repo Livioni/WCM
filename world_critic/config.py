@@ -200,6 +200,8 @@ def apply_runtime_overrides(config: TrainConfig) -> TrainConfig:
     repo_id = value("WCM_DATASET_REPO_ID")
     root = value("WCM_DATASET_ROOT")
     revision = value("WCM_DATASET_REVISION")
+    vision_model_name = value("WCM_VISION_MODEL_NAME")
+    language_model_name = value("WCM_LANGUAGE_MODEL_NAME")
     output_dir = value("WCM_OUTPUT_DIR")
     expected_world_size = integer("WCM_EXPECTED_WORLD_SIZE")
     num_workers = integer("WCM_NUM_WORKERS")
@@ -215,6 +217,10 @@ def apply_runtime_overrides(config: TrainConfig) -> TrainConfig:
         config.data.root = root
     if revision is not None:
         config.data.revision = revision
+    if vision_model_name is not None:
+        config.model.vision.model_name = vision_model_name
+    if language_model_name is not None:
+        config.model.language.model_name = language_model_name
     if output_dir is not None:
         config.output_dir = output_dir
     if expected_world_size is not None:

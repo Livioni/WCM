@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Edit only this section, then run:  bash run_train.sh
+# Edit only this section, then run:  bash 2_run_train.sh
 GPUS=1 #8                                  # 1 or 8
 CUDA_VISIBLE_DEVICES=0 #"0,1,2,3,4,5,6,7"
 STABLEWM_HOME="logs/home"                      # optional legacy cluster env; not required by LeRobot

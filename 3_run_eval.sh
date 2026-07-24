@@ -22,6 +22,10 @@ LOG_EVERY_BATCHES=20                    # unbuffered fetch/forward diagnostics; 
 DATASET_REPO_ID="lerobot_with_return_val"                         # empty = use the checkpoint's dataset id
 DATASET_ROOT="/path/to/lerobot_with_return_val"     
 DATASET_REVISION=""
+
+VISION_MODEL_NAME="google/vit-base-patch16-224-in21k"  # Local path / hf name supported
+LANGUAGE_MODEL_NAME="openai/clip-vit-base-patch32"   # Local path / hf name supported
+
 PRECISION=""                            # empty = checkpoint value
 WANDB_MODE="offline"
 ALLOW_CPU_SMOKE=0                       # 1 only for an intentional Gloo smoke test
@@ -68,6 +72,8 @@ set_optional_env() {
 set_optional_env WCM_DATASET_ROOT "$DATASET_ROOT"
 set_optional_env WCM_DATASET_REVISION "$DATASET_REVISION"
 set_optional_env WCM_PRECISION "$PRECISION"
+set_optional_env WCM_VISION_MODEL_NAME "$VISION_MODEL_NAME"
+set_optional_env WCM_LANGUAGE_MODEL_NAME "$LANGUAGE_MODEL_NAME"
 
 if [[ "$ALLOW_CPU_SMOKE" == "1" ]]; then
   export WCM_ALLOW_CPU_DDP=1
