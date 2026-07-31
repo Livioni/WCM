@@ -111,7 +111,7 @@ bash 1_add_returns.sh
 
 If you want to quickly test WCM, we recommend using our released real-robot pick-and-place dataset, which has already been converted into the format required by WCM. You can download it from [Sylvest/pick-place-wcm](https://huggingface.co/datasets/Sylvest/pick-place-wcm). It trains quickly and reproduces the results shown on our homepage. We have also released the trained model weights at [Sylvest/pick-place-wcm-ckpt](https://huggingface.co/Sylvest/pick-place-wcm-ckpt).
 
-If you are preparing simulated data to test WCM, we recommend you to download the **official LIBERO-Plus LeRobot dataset** from [Sylvest/libero_plus_lerobot](https://huggingface.co/datasets/Sylvest/libero_plus_lerobot), and then use the `1_add_returns.sh` script along with the label file `assets/label/success_labels_liberoplus.json` to reproduce the results shown on our website. Note that this dataset only contains successful trajectories.
+If you are preparing simulated data to test WCM and its data preprocessing pipeline, we recommend you to download the **official LIBERO-Plus LeRobot dataset** from [Sylvest/libero_plus_lerobot](https://huggingface.co/datasets/Sylvest/libero_plus_lerobot), and then use the `1_add_returns.sh` script along with the label file `assets/label/success_labels_liberoplus.json` to reproduce the results shown on our website. Note that this dataset only contains successful trajectories.
 
 Please note that due to the large size of the LIBERO-Plus dataset (tens of thousands of episodes), training for one epoch may take a considerable amount of time. For the 181 real-world episodes, however, training one epoch takes only about 2 minutes on a single A100 GPU.
 
