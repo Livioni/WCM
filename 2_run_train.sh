@@ -10,7 +10,7 @@ CONFIG="configs/train_8gpu.yaml"
 DATASET_REPO_ID="lerobot_with_return"                         # required unless CONFIG already contains it
 DATASET_ROOT="/path/to/lerobot_with_return"                              # empty = use the HF cache
 DATASET_REVISION=""                            # optional
-OUTPUT_DIR="outputs/wcm_v2"
+OUTPUT_DIR="outputs/wcm"
 EPOCHS=""                                      # empty = keep CONFIG value
 PER_DEVICE_BATCH_SIZE=""                       # empty = keep CONFIG value
 EVAL_BATCH_SIZE=""                             # empty = keep CONFIG value

@@ -122,7 +122,7 @@ class LeRobotDatasetRepository(EpisodeSourceRepository):
             from world_critic.training import config_from_checkpoint_payload
         except ImportError as exc:
             raise ImportError(
-                "Checkpoint-backed frame loading must be run from WCM_v2 with the world_critic "
+                "Checkpoint-backed frame loading must be run from WCM with the world_critic "
                 "environment installed."
             ) from exc
 

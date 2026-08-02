@@ -634,8 +634,8 @@ def _preflight_video_decoder(dataset: Any, config: DataConfig) -> None:
             torch_version = "unknown"
         raise RuntimeError(
             "LeRobot is using TorchCodec for video features, but its native decoder could not be loaded. "
-            f"Detected torch={torch_version}, torchcodec={torchcodec_version}. WCM_v2 requires "
-            "torch 2.7.x with torchcodec 0.5.x. Reinstall the resolved environment from WCM_v2 with "
+            f"Detected torch={torch_version}, torchcodec={torchcodec_version}. WCM requires "
+            "torch 2.7.x with torchcodec 0.5.x. Reinstall the resolved environment from WCM with "
             '`uv pip install --refresh --reinstall-package torchcodec -e ".[all]"` and verify that FFmpeg shared libraries are available '
             "(`ffmpeg -version` must work; on Linux the libav*.so files must be discoverable)."
         ) from exc

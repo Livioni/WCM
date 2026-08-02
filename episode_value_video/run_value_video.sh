@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Edit this section, then run from WCM_v2:
+# Edit this section, then run from WCM:
 #   bash episode_value_video/run_value_video.sh
 # ---------------------------------------------------------------------------
 MODE="render"  # render = consume existing curves; pipeline = run eval first
-CHECKPOINT="outputs/wcm_v2/checkpoints/deploy.pt"
-EVAL_OUTPUT_DIR="outputs/wcm_v2/eval"
-VIDEO_OUTPUT_DIR="outputs/wcm_v2/eval/episode_value_videos"
+CHECKPOINT="outputs/wcm/checkpoints/deploy.pt"
+EVAL_OUTPUT_DIR="outputs/wcm/eval"
+VIDEO_OUTPUT_DIR="outputs/wcm/eval/episode_value_videos"
 DATASET_ROOT=""       # empty = checkpoint value / environment override
 CAMERA_KEY=""         # empty = first checkpoint data.image_keys entry
 EPISODE_ID=""          # empty = all curves; otherwise one integer id

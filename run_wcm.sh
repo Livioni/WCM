@@ -25,7 +25,7 @@ DATASET_REPO_ID=""                         # empty = keep the YAML/checkpoint da
 DATASET_ROOT=""                      # local LeRobot root; empty keeps YAML value
 DATASET_REVISION=""                  # optional Hub/local revision
 
-OUTPUT_DIR="outputs/wcm_v2"
+OUTPUT_DIR="outputs/wcm"
 CHECKPOINT="${OUTPUT_DIR}/deploy.pt"
 EVAL_OUTPUT_DIR="${OUTPUT_DIR}/eval"
 EVAL_SPLIT="val"                     # train | val | all

@@ -93,7 +93,7 @@ class OptimConfig:
 
 @dataclass
 class TrainConfig:
-    output_dir: str = "outputs/wcm_v2"
+    output_dir: str = "outputs/wcm"
     seed: int = 3072
     epochs: int = 100
     per_device_batch_size: int = 32
@@ -121,7 +121,7 @@ class TrainConfig:
 @dataclass
 class EvalConfig:
     checkpoint: str
-    output_dir: str = "outputs/wcm_v2_eval"
+    output_dir: str = "outputs/wcm_eval"
     batch_size: int = 64
     num_workers: int = 8
     precision: str = "bf16"

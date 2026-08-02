@@ -98,6 +98,7 @@ Using `uv`:
 uv venv --python=3.12
 source .venv/bin/activate
 uv pip install -e ".[all]"
+apt install ffmpeg
 ```
 
 You can download the configured [ViT](https://huggingface.co/google/vit-base-patch16-224-in21k) and [CLIP](https://huggingface.co/openai/clip-vit-base-patch32) checkpoints from Hugging Face, and replace the `model_name` field in `configs/train_8gpu.yaml`.
