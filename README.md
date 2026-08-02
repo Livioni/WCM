@@ -92,7 +92,7 @@ while allowing both objectives to improve the shared representation.
 
 ## Installation
 
-Using `uv`:
+We recommend using **Ubuntu** as the OS and managing the Python environment with **[`uv`](https://github.com/astral-sh/uv)**. You can install `uv` via `pip install uv`, then setup WCM in a few commands below:
 
 ```bash
 uv venv --python=3.12
@@ -101,7 +101,7 @@ uv pip install -e ".[all]"
 apt install ffmpeg
 ```
 
-You can download the configured [ViT](https://huggingface.co/google/vit-base-patch16-224-in21k) and [CLIP](https://huggingface.co/openai/clip-vit-base-patch32) checkpoints from Hugging Face, and replace the `model_name` field in `configs/train_8gpu.yaml`.
+You can download the configured [ViT](https://huggingface.co/google/vit-base-patch16-224-in21k) and [CLIP](https://huggingface.co/openai/clip-vit-base-patch32) checkpoints, and replace the `model_name` field in `configs/train_8gpu.yaml`.
 
 ## Data Preparation
 We provide a conversion script to transform all versions of **LeRobot** dataset into the format required by **WCM**. You can use your own data and process it accordingly. Make sure to provide an explicit `--success-labels` JSON mapping like `assets/label/success_labels_liberoplus.json`, and then use the following script to perform data conversion and add returns:
