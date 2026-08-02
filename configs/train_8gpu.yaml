@@ -16,7 +16,7 @@ deterministic: false
 
 data:
   repo_id: your-user/your-lerobot-dataset-with-return
-  root: /path/to/lerobot_v31_dataset
+  root: /path/to/lerobot_v31_dataset  # Ensure 1_add_returns.sh has been run to add return fields and convert to LeRobot v3.1
   revision: null
   image_keys:
     - observation.images.front
