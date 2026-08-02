@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 
 
-DEFAULT_OUTPUT = "/inspire/hdd/global_user/feisenyu-253108140203/datasets/libero_plus_lerobot/success_labels.json"
+DEFAULT_OUTPUT = "/path/to/success_labels.json"
 
 
 def _parse_args() -> argparse.Namespace:
