@@ -62,7 +62,7 @@ model:
 
 loss:
   value_weight: 1.0
-  next_state_weight: 0.1
+  next_state_weight: 1.0  # Tune this to control how fast value and prediction converge (Large number like 10 makes state prediction converges quickly.)
   next_state_vector_weight: 0.0
   sigreg_weight: 0.01
   sigreg_knots: 17
