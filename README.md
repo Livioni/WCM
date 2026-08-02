@@ -194,11 +194,15 @@ See the [paper](https://github.com/sylvestf/WCM) for complete baselines, per-tas
 
 If you find this work useful for your research, please cite our paper:
 
-```bibtex
+<!-- ```bibtex
 @inproceedings{wcm2026,
   title     = {WCM: A World Critic Model for Vision-Language-Action Reinforcement Learning},
   author    = {},
   booktitle = {},
   year      = {2026}
 }
+``` -->
+
+```bibtex
+TODO
 ```
