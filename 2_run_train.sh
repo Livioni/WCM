@@ -4,8 +4,6 @@ set -euo pipefail
 # Edit only this section, then run:  bash 2_run_train.sh
 GPUS=1 #8                                  # 1 or 8
 CUDA_VISIBLE_DEVICES=0 #"0,1,2,3,4,5,6,7"
-STABLEWM_HOME="logs/home"                      # optional legacy cluster env; not required by LeRobot
-LOCAL_DATASET_DIR="logs/home"                  # optional alias for DATASET_ROOT
 CONFIG="configs/train_8gpu.yaml"
 DATASET_REPO_ID="lerobot_with_return"                         # required unless CONFIG already contains it
 DATASET_ROOT="/path/to/lerobot_with_return"                              # empty = use the HF cache

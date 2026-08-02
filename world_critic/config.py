@@ -171,7 +171,7 @@ def load_config(path: str | Path, cls: type[T] = TrainConfig) -> T:
 def apply_runtime_overrides(config: TrainConfig) -> TrainConfig:
     """Apply small launcher-friendly overrides supplied through ``WCM_*`` env vars.
 
-    The checked-in ``run_wcm.sh`` intentionally keeps all experiment knobs at
+    The checked-in ``run_*.sh`` intentionally keeps all experiment knobs at
     the top of one shell file.  Keeping the override layer here avoids
     generating a temporary YAML file and preserves the exact same config
     validation/checkpoint schema as a direct ``--config`` invocation.  Empty
