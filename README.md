@@ -3,7 +3,7 @@
 ### A World Critic Model for Vision-Language-Action Reinforcement Learning
 
 <div align="center">
-  <a href="https://github.com/sylvestf/WCM">📄 <strong>Paper</strong></a>
+  <a href="https://arxiv.org/pdf/2607.29613">📄 <strong>Paper</strong></a>
   &nbsp;|&nbsp;
   <a href="https://huggingface.co/collections/Sylvest/wcm">💾 <strong>Checkpoints &amp; Data</strong></a>
   &nbsp;|&nbsp;
@@ -188,22 +188,21 @@ The paper evaluates WCM in:
 - **Real world:** seven manipulation tasks on a WidowX-250S, including dynamic grasping, deformable-object
   manipulation, long-horizon cleaning, and pick-and-place.
 
-See the [paper](https://github.com/sylvestf/WCM) for complete baselines, per-task results, ablations, and experimental details. We will gradually open-source ckpts of the data points claimed in the paper and the corresponding RL code.
+See the [paper](https://arxiv.org/pdf/2607.29613) for complete baselines, per-task results, ablations, and experimental details. We will gradually open-source ckpts of the data points claimed in the paper and the corresponding RL code.
 
 
 ## Citation
 
 If you find this work useful for your research, please cite our paper:
 
-<!-- ```bibtex
-@inproceedings{wcm2026,
-  title     = {WCM: A World Critic Model for Vision-Language-Action Reinforcement Learning},
-  author    = {},
-  booktitle = {},
-  year      = {2026}
-}
-``` -->
-
 ```bibtex
-TODO
+@misc{fei2026wcmworldcriticmodel,
+      title={WCM: A World Critic Model for Vision-Language-Action Reinforcement Learning}, 
+      author={Senyu Fei and Xiaopeng Yu and Siyin Wang and Xianzhong Zhao and Jingjing Gong and Xipeng Qiu},
+      year={2026},
+      eprint={2607.29613},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2607.29613}, 
+}
 ```
