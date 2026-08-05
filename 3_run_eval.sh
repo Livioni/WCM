@@ -48,9 +48,9 @@ if [[ -n "$CUDA_VISIBLE_DEVICES" ]]; then
   export CUDA_VISIBLE_DEVICES
 fi
 python -u -c 'import torch; device=torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"; print("[launcher] torch={} cuda={} cuda_available={} visible_devices={} device={}".format(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.device_count(), device), flush=True)'
-if [[ -n "$STABLEWM_HOME" ]]; then export STABLEWM_HOME; else unset STABLEWM_HOME 2>/dev/null || true; fi
-if [[ -n "$LOCAL_DATASET_DIR" ]]; then export LOCAL_DATASET_DIR; else unset LOCAL_DATASET_DIR 2>/dev/null || true; fi
-if [[ -z "$DATASET_ROOT" && -n "$LOCAL_DATASET_DIR" ]]; then DATASET_ROOT="$LOCAL_DATASET_DIR"; fi
+# if [[ -n "$STABLEWM_HOME" ]]; then export STABLEWM_HOME; else unset STABLEWM_HOME 2>/dev/null || true; fi
+# if [[ -n "$LOCAL_DATASET_DIR" ]]; then export LOCAL_DATASET_DIR; else unset LOCAL_DATASET_DIR 2>/dev/null || true; fi
+# if [[ -z "$DATASET_ROOT" && -n "$LOCAL_DATASET_DIR" ]]; then DATASET_ROOT="$LOCAL_DATASET_DIR"; fi
 export WANDB_MODE
 export PYTHONUNBUFFERED=1
 export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
