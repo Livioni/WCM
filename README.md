@@ -196,13 +196,10 @@ See the [paper](https://arxiv.org/pdf/2607.29613) for complete baselines, per-ta
 If you find this work useful for your research, please cite our paper:
 
 ```bibtex
-@misc{fei2026wcmworldcriticmodel,
-      title={WCM: A World Critic Model for Vision-Language-Action Reinforcement Learning}, 
-      author={Senyu Fei and Xiaopeng Yu and Siyin Wang and Xianzhong Zhao and Jingjing Gong and Xipeng Qiu},
-      year={2026},
-      eprint={2607.29613},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2607.29613}, 
+@article{fei2026wcm,
+  title={WCM: A World Critic Model for Vision-Language-Action Reinforcement Learning},
+  author={Fei, Senyu and Yu, Xiaopeng and Wang, Siyin and Zhao, Xianzhong and Gong, Jingjing and Qiu, Xipeng},
+  journal={arXiv preprint arXiv:2607.29613},
+  year={2026}
 }
 ```
