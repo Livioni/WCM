@@ -7,3 +7,6 @@ dist/
 outputs/
 wandb/
 .pytest_cache/
+
+checkpoints
+hfd.sh

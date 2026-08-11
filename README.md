@@ -152,6 +152,48 @@ writes JSON/CSV curves and PNG plots under `outputs/wcm/eval/episode_curves/`.
 
 For an 8-GPU run, set the dataset variables and `GPUS=8` in `2_run_train.sh`. The launcher selects `python` for one GPU and `torchrun` for 8 GPUs.
 
+## Action-free Value Inference
+
+The value branch only needs an observation history, a task instruction, and an optional history validity mask.
+It does not consume actions or execute the dynamics predictor. For raw images and language strings, load a
+checkpoint through the high-level interface:
+
+```python
+from world_critic import ValuePredictor
+
+predictor = ValuePredictor.from_checkpoint(
+    "outputs/wcm/checkpoints/deploy.pt",
+    device="cuda",
+)
+value = predictor.predict(
+    history_images=[front_t0, front_t1, front_t2],  # one camera; current frame is last
+    instruction="put the mug on the plate",
+    valid_mask=[True, True, True],
+)
+```
+
+For already-preprocessed batched tensors, call `model.forward_value(...)`. It accepts images shaped
+`[B,T,C,H,W]` or `[B,T,V,C,H,W]`, tokenized instruction tensors, and `valid_mask[B,T]`, and returns
+values shaped `[B,T,1]`.
+
+To infer every frame of one LeRobot v2.1 or v3.0 episode:
+
+```bash
+python -m world_critic.infer_episode_curve \
+  --checkpoint outputs/wcm/checkpoints/deploy.pt \
+  --dataset-root /path/to/lerobot_dataset \
+  --dataset-repo-id your-user/your-dataset \
+  --episode-index 0 \
+  --batch-size 16 \
+  --device cuda \
+  --output outputs/wcm/inference/episode-0/episode_curves.json
+```
+
+The command writes compatible `episode_curves.json`, `episode_curves.csv`, and `episode_curves.png` files.
+Early episode frames are left-padded with the first image and masked, so the curve contains exactly one value
+for every frame, including the final frame. Use `--instruction "..."` to override the task stored in LeRobot
+metadata.
+
 ## Video Visualization
 
 We also provide a script for value curve video visualization. You can use the following command to generate videos with the same effects as those shown [above](https://github.com/sylvestf/WCM#a-world-critic-model-for-vision-language-action-reinforcement-learning).

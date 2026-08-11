@@ -1,5 +1,6 @@
 from .config import DataConfig, ModelConfig, TrainConfig
 from .model import LatentRolloutOutput, WorldCriticModel, WorldCriticOutput
+from .value_inference import ValuePredictor
 
 __all__ = [
     "DataConfig",
@@ -8,4 +9,5 @@ __all__ = [
     "LatentRolloutOutput",
     "WorldCriticModel",
     "WorldCriticOutput",
+    "ValuePredictor",
 ]

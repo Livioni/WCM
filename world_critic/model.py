@@ -281,6 +281,7 @@ class ActionFreeContextTrunk(nn.Module):
     def __init__(self, config: ModelConfig) -> None:
         super().__init__()
         self.max_history = config.max_history
+        self.num_heads = config.trunk_heads
         self.time_embedding = nn.Parameter(torch.zeros(1, config.max_history, config.latent_dim))
         layer = nn.TransformerEncoderLayer(
             d_model=config.latent_dim,
@@ -302,10 +303,24 @@ class ActionFreeContextTrunk(nn.Module):
         state_tokens = state_tokens + self.time_embedding[:, :time]
         if not valid_mask.any(dim=1).all():
             raise ValueError("Every sequence must contain at least one valid observation token.")
+        valid_mask = valid_mask.bool()
+        # Combining a causal mask with left padding can leave an invalid query
+        # with no legal key. PyTorch attention then emits NaNs, which can leak
+        # into valid tokens in deeper layers. Valid queries must not see padded
+        # keys; padded queries attend only to themselves so every row remains
+        # numerically defined while carrying no information into valid tokens.
+        attention_mask = causal_mask(time, state_tokens.device)
+        if not valid_mask.all():
+            batch = state_tokens.size(0)
+            attention_mask = attention_mask.unsqueeze(0).expand(batch, -1, -1).clone()
+            attention_mask |= (~valid_mask).unsqueeze(1)
+            attention_mask |= (~valid_mask).unsqueeze(-1)
+            diagonal = torch.arange(time, device=state_tokens.device)
+            attention_mask[:, diagonal, diagonal] = False
+            attention_mask = attention_mask.repeat_interleave(self.num_heads, dim=0)
         output = self.transformer(
             state_tokens,
-            mask=causal_mask(time, state_tokens.device),
-            src_key_padding_mask=~valid_mask.bool(),
+            mask=attention_mask,
         )
         return self.output_norm(output)
 
@@ -456,6 +471,82 @@ class WorldCriticModel(nn.Module):
         fused = self.language_fusion(current_state_latent, instruction_tokens, instruction_mask)
         return self.context_trunk(fused, valid_mask)
 
+    def _value_context(
+        self,
+        state_latents: torch.Tensor,
+        instruction_input_ids: torch.Tensor,
+        instruction_attention_mask: torch.Tensor,
+        valid_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        text_tokens, text_mask = self.language_encoder(
+            instruction_input_ids,
+            instruction_attention_mask,
+        )
+        context = self.encode_context(state_latents, text_tokens, text_mask, valid_mask)
+        return context, self.value_head(context)
+
+    def forward_value(
+        self,
+        images: torch.Tensor,
+        instruction_input_ids: torch.Tensor,
+        instruction_attention_mask: torch.Tensor,
+        valid_mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Estimate action-free values for every observation in a history.
+
+        ``valid_mask`` marks valid observation timesteps, not actions. Unlike
+        :meth:`forward`, this path consumes every supplied image timestep and
+        neither requires nor executes the action-conditioned dynamics branch.
+        """
+
+        if images.ndim not in (5, 6):
+            raise ValueError(f"Expected images [B,T,C,H,W] or [B,T,V,C,H,W], got {images.shape}")
+        batch, time = images.shape[:2]
+        if time < 1:
+            raise ValueError("Value inference requires at least one observation timestep.")
+        if instruction_input_ids.ndim != 2 or instruction_attention_mask.ndim != 2:
+            raise ValueError(
+                "Instruction tensors must be [B,L], got "
+                f"{instruction_input_ids.shape}/{instruction_attention_mask.shape}."
+            )
+        if instruction_input_ids.shape != instruction_attention_mask.shape:
+            raise ValueError(
+                "Instruction input ids and attention mask shapes differ: "
+                f"{instruction_input_ids.shape} vs {instruction_attention_mask.shape}."
+            )
+        if instruction_input_ids.size(0) != batch:
+            raise ValueError(
+                "Instruction batch size differs from image batch size: "
+                f"{instruction_input_ids.shape} vs {images.shape}."
+            )
+        if instruction_input_ids.device != images.device:
+            raise ValueError(
+                "Images and instruction_input_ids must be on the same device: "
+                f"images={images.device}, instruction_input_ids={instruction_input_ids.device}."
+            )
+        if instruction_attention_mask.device != images.device:
+            raise ValueError(
+                "Images and instruction_attention_mask must be on the same device: "
+                f"images={images.device}, instruction_attention_mask={instruction_attention_mask.device}."
+            )
+        if valid_mask is None:
+            valid_mask = torch.ones((batch, time), dtype=torch.bool, device=images.device)
+        if valid_mask.shape != (batch, time):
+            raise ValueError(f"valid_mask must be [B,T]={batch, time}, got {valid_mask.shape}")
+        if valid_mask.device != images.device:
+            raise ValueError(
+                f"Images and valid_mask must be on the same device: {images.device} != {valid_mask.device}."
+            )
+
+        state_latents = self.pool_views(self.vision_encoder(images))
+        _, value = self._value_context(
+            state_latents,
+            instruction_input_ids,
+            instruction_attention_mask,
+            valid_mask,
+        )
+        return value
+
     def forward(
         self,
         images: torch.Tensor,
@@ -501,14 +592,14 @@ class WorldCriticModel(nn.Module):
 
         view_latents = self.vision_encoder(images)
         state_latents = self.pool_views(view_latents)
-        text_tokens, text_mask = self.language_encoder(
+        context, value = self._value_context(
+            state_latents[:, :-1],
             instruction_input_ids,
             instruction_attention_mask,
+            valid_mask,
         )
-        context = self.encode_context(state_latents[:, :-1], text_tokens, text_mask, valid_mask)
 
-        # This line executes before `actions` is consumed anywhere in the graph.
-        value = self.value_head(context)
+        # Actions are first consumed below, after the value has been computed.
         next_state_pred = self.dynamics(
             current_state_latent=state_latents[:, :-1],
             context=context,

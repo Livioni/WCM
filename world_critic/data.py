@@ -471,7 +471,7 @@ class LeRobotWorldCriticDataset(Dataset):
         return batch
 
 
-class WorldCriticCollator:
+class _MultimodalCollator:
     def __init__(self, processor: Any, image_size: int, max_text_length: int) -> None:
         self.image_processor = getattr(processor, "image_processor", processor)
         self.tokenizer = getattr(processor, "tokenizer", None)
@@ -481,13 +481,20 @@ class WorldCriticCollator:
         self.max_text_length = max_text_length
 
     @torch.no_grad()
-    def __call__(self, samples: list[dict[str, Any]]) -> dict[str, Any]:
+    def _collate_inputs(
+        self,
+        samples: list[dict[str, Any]],
+        *,
+        minimum_timesteps: int,
+    ) -> dict[str, Any]:
         if not samples:
             raise ValueError("Cannot collate an empty sample list.")
         batch = len(samples)
         time = len(samples[0]["images"])
-        if time < 2:
-            raise ValueError("Each sample must contain current and next observation images.")
+        if time < minimum_timesteps:
+            raise ValueError(
+                f"Each sample must contain at least {minimum_timesteps} observation timestep(s)."
+            )
         views = len(samples[0]["images"][0])
         if views < 1:
             raise ValueError("Each timestep must contain at least one camera image.")
@@ -564,16 +571,33 @@ class WorldCriticCollator:
             max_length=self.max_text_length,
             return_tensors="pt",
         )
-        output = {
+        valid_mask = torch.stack(
+            [torch.as_tensor(sample["valid_mask"], dtype=torch.bool) for sample in samples]
+        )
+        if valid_mask.shape != (batch, time):
+            raise ValueError(f"valid_mask must be [B,T]={batch, time}, got {valid_mask.shape}.")
+        return {
             "images": processed,
-            "actions": torch.stack([sample["actions"] for sample in samples]),
             "instruction_input_ids": tokenized["input_ids"],
             "instruction_attention_mask": tokenized["attention_mask"],
-            "valid_mask": torch.stack([sample["valid_mask"] for sample in samples]),
-            "episode_id": torch.as_tensor([sample["episode_id"] for sample in samples], dtype=torch.long),
-            "frame_indices": torch.stack([sample["frame_indices"] for sample in samples]),
-            "sample_id": [sample["sample_id"] for sample in samples],
+            "valid_mask": valid_mask,
         }
+
+
+class WorldCriticCollator(_MultimodalCollator):
+    @torch.no_grad()
+    def __call__(self, samples: list[dict[str, Any]]) -> dict[str, Any]:
+        output = self._collate_inputs(samples, minimum_timesteps=2)
+        output.update(
+            {
+                "actions": torch.stack([sample["actions"] for sample in samples]),
+                "episode_id": torch.as_tensor(
+                    [sample["episode_id"] for sample in samples], dtype=torch.long
+                ),
+                "frame_indices": torch.stack([sample["frame_indices"] for sample in samples]),
+                "sample_id": [sample["sample_id"] for sample in samples],
+            }
+        )
         has_returns = ["return_targets" in sample for sample in samples]
         if any(has_returns) and not all(has_returns):
             raise ValueError("A batch mixes samples with and without return_targets.")
@@ -585,6 +609,14 @@ class WorldCriticCollator:
         if all(has_states):
             output["next_state_vector"] = torch.stack([sample["next_state_vector"] for sample in samples])
         return output
+
+
+class ValueOnlyCollator(_MultimodalCollator):
+    """Preprocess image histories and instructions without action/target fields."""
+
+    @torch.no_grad()
+    def __call__(self, samples: list[dict[str, Any]]) -> dict[str, Any]:
+        return self._collate_inputs(samples, minimum_timesteps=1)
 
 
 def load_lerobot_dataset(config: DataConfig) -> Any:
