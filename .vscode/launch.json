@@ -40,10 +40,36 @@
                 "--checkpoint", "checkpoints/WCM_LIBEROplus/best.pt",
                 "--dataset-root", "/home/wenchaoxu/phs/datasets/libero_plus_lerobot",
                 "--dataset-repo-id", "Sylvest/libero_plus_lerobot",
+                "--episode-index", "3006",
+                "--batch-size", "1",
+                "--device", "cuda",
+                "--output", "outputs/wcm/debug/episode-3006/episode_curves.json"
+            ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYTHONUNBUFFERED": "1",
+                "HF_HUB_OFFLINE": "1",
+                "TRANSFORMERS_OFFLINE": "1"
+            }
+        },
+        {
+            "name": "WCM: Debug reversed episode value curve",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "world_critic.infer_episode_curve",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--checkpoint", "checkpoints/WCM_LIBEROplus/best.pt",
+                "--dataset-root", "/home/wenchaoxu/phs/datasets/libero_plus_lerobot",
+                "--dataset-repo-id", "Sylvest/libero_plus_lerobot",
                 "--episode-index", "0",
                 "--batch-size", "1",
                 "--device", "cuda",
-                "--output", "outputs/wcm/debug/episode-0/episode_curves.json"
+                "--reverse-episode",
+                "--output", "outputs/wcm/debug/episode-0-reversed/episode_curves.json"
             ],
             "env": {
                 "CUDA_VISIBLE_DEVICES": "0",

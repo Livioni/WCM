@@ -136,12 +136,31 @@ def _preflight_alignment(
             raise AlignmentError(message)
         warnings.append(message)
 
+    # Curves produced by offline evaluation contain one complete-history
+    # endpoint per temporal window, so they stop at the penultimate source
+    # frame.  ``world_critic.infer_episode_curve`` instead pads early history
+    # and predicts every source frame, including the final one.
+    full_frame_curve = (
+        curve.first_frame == source.first_frame_index
+        and curve.last_frame == source.last_frame_index
+    )
     expected_last_curve = source.last_frame_index - 1
-    if curve.last_frame != expected_last_curve:
+    if curve.last_frame not in {expected_last_curve, source.last_frame_index}:
         message = (
             f"episode_id={curve.episode_id} last prediction is frame {curve.last_frame}, but the "
-            f"current evaluator contract expects source penultimate frame {expected_last_curve}. "
+            f"supported contracts end at source penultimate frame {expected_last_curve} "
+            f"(offline evaluation) or final frame {source.last_frame_index} "
+            "(dense per-frame inference). "
             "The curve may be an incomplete debug subset."
+        )
+        if not allow_mismatch:
+            raise AlignmentError(message)
+        warnings.append(message)
+    elif curve.last_frame == source.last_frame_index and not full_frame_curve:
+        message = (
+            f"episode_id={curve.episode_id} reaches final source frame "
+            f"{source.last_frame_index}, but a dense per-frame curve must begin at source "
+            f"frame {source.first_frame_index}; got {curve.first_frame}."
         )
         if not allow_mismatch:
             raise AlignmentError(message)
@@ -151,7 +170,9 @@ def _preflight_alignment(
         raise AlignmentError(
             f"episode_id={curve.episode_id} begins before its source video."
         )
-    if source.expected_first_curve_frame is None:
+    if full_frame_curve:
+        pass
+    elif source.expected_first_curve_frame is None:
         warnings.append(
             "history_size was unavailable, so the first curve frame could not be "
             "independently distinguished from a truncated-prefix artifact."
@@ -343,8 +364,14 @@ def render_one_episode(
         alignment_basis=source.alignment_basis,
         expected_first_curve_frame=source.expected_first_curve_frame,
         first_curve_contract_verified=(
-            source.expected_first_curve_frame is not None
-            and curve.first_frame == source.expected_first_curve_frame
+            (
+                curve.first_frame == source.first_frame_index
+                and curve.last_frame == source.last_frame_index
+            )
+            or (
+                source.expected_first_curve_frame is not None
+                and curve.first_frame == source.expected_first_curve_frame
+            )
         ),
         frame_count_inferred=source.frame_count_inferred,
         mapping_verified=not warnings,

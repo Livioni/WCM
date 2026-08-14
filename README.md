@@ -194,6 +194,11 @@ Early episode frames are left-padded with the first image and masked, so the cur
 for every frame, including the final frame. Use `--instruction "..."` to override the task stored in LeRobot
 metadata.
 
+Add `--reverse-episode` to test the same episode played from its last frame to its first frame. In that mode,
+`frame_indices` are reverse-playback steps (`0..N-1`) and `source_frame_indices` identify the original dataset
+frames (`N-1..0`). History windows are rebuilt in reverse order; the command does not merely reverse a forward
+prediction curve.
+
 ## Video Visualization
 
 We also provide a script for value curve video visualization. You can use the following command to generate videos with the same effects as those shown [above](https://github.com/sylvestf/WCM#a-world-critic-model-for-vision-language-action-reinforcement-learning).

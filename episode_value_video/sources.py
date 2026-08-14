@@ -309,9 +309,13 @@ class VideoTemplateRepository(EpisodeSourceRepository):
             frame_count = probe.frame_count
             inferred = False
         else:
-            # The WCM endpoint contract ends at the penultimate episode frame.
-            # This is validated against the decoded count before output commit.
-            frame_count = curve.last_frame - self.frame_offset + 2
+            # Offline-evaluator curves end at the penultimate frame, whereas
+            # dense per-frame inference starts at frame_offset and includes
+            # the final frame.  This is still validated against the decoded
+            # count before output commit.
+            dense_per_frame = curve.first_frame == self.frame_offset
+            terminal_frames = 1 if dense_per_frame else 2
+            frame_count = curve.last_frame - self.frame_offset + terminal_frames
             inferred = True
         if frame_count < 1:
             raise SourceResolutionError(

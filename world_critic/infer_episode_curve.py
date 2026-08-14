@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from collections.abc import Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
@@ -39,6 +40,15 @@ def parser() -> argparse.ArgumentParser:
         help="Output episode_curves.json path; sibling CSV and PNG files are also written.",
     )
     result.add_argument("--batch-size", type=int, default=16)
+    result.add_argument(
+        "--reverse-episode",
+        action="store_true",
+        help=(
+            "Play the episode from its last frame to its first frame before building each "
+            "history window. Output frame_indices are reverse-playback steps; "
+            "source_frame_indices record the corresponding original frame indices."
+        ),
+    )
     result.add_argument("--seed", type=int, default=3072)
     result.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     result.add_argument("--precision", choices=["fp32", "bf16"])
@@ -94,6 +104,7 @@ def _episode_histories(
     *,
     read_frame: Callable[[int], dict[str, Any]],
     frame_indices: range,
+    frame_order: Sequence[int] | None = None,
     history_size: int,
     image_keys: list[str],
     episode_index: int,
@@ -121,16 +132,26 @@ def _episode_histories(
     override = instruction_override.strip() if instruction_override is not None else None
     if instruction_override is not None and not override:
         raise ValueError("--instruction cannot be empty.")
-    first_sample = checked_frame(0)
+    if frame_order is None:
+        frame_order = range(max(frame_indices.stop, 1))
+    if not frame_order:
+        raise ValueError("frame_order cannot be empty.")
+    if frame_indices.start < 0 or frame_indices.stop > len(frame_order):
+        raise ValueError(
+            f"Playback steps {frame_indices.start}:{frame_indices.stop} are outside "
+            f"frame_order length {len(frame_order)}."
+        )
+
+    first_sample = checked_frame(frame_order[0])
     instruction = override or task_for_sample(dataset, first_sample)
 
     histories: list[list[list[torch.Tensor]]] = []
     masks: list[torch.Tensor] = []
-    for frame_index in frame_indices:
-        first_real = max(0, frame_index - history_size + 1)
-        real_indices = list(range(first_real, frame_index + 1))
+    for playback_step in frame_indices:
+        first_real = max(0, playback_step - history_size + 1)
+        real_indices = list(frame_order[first_real : playback_step + 1])
         pad = history_size - len(real_indices)
-        padded_indices = [0] * pad + real_indices
+        padded_indices = [frame_order[0]] * pad + real_indices
         history = [
             [_to_image_tensor(checked_frame(index)[key]) for key in image_keys]
             for index in padded_indices
@@ -154,6 +175,7 @@ def _write_curve_artifacts(
     episode_index: int,
     frame_indices: list[int],
     values: list[float],
+    source_frame_indices: list[int] | None = None,
 ) -> tuple[Path, Path, Path]:
     output_path = output_path.expanduser().resolve()
     if output_path.suffix.lower() != ".json":
@@ -161,7 +183,17 @@ def _write_curve_artifacts(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     csv_path = output_path.with_suffix(".csv")
     png_path = output_path.with_suffix(".png")
-    curve = [{"episode_id": episode_index, "frame_indices": frame_indices, "values": values}]
+    curve_entry: dict[str, Any] = {
+        "episode_id": episode_index,
+        "frame_indices": frame_indices,
+        "values": values,
+    }
+    if source_frame_indices is not None:
+        if len(source_frame_indices) != len(frame_indices):
+            raise ValueError("source_frame_indices must align one-to-one with frame_indices.")
+        curve_entry["playback_direction"] = "reverse"
+        curve_entry["source_frame_indices"] = source_frame_indices
+    curve = [curve_entry]
 
     temporary_json = output_path.with_suffix(output_path.suffix + ".tmp")
     temporary_json.write_text(json.dumps(curve, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -170,9 +202,16 @@ def _write_curve_artifacts(
     temporary_csv = csv_path.with_suffix(csv_path.suffix + ".tmp")
     with temporary_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["episode_id", "frame_index", "value"])
-        for frame_index, value in zip(frame_indices, values, strict=True):
-            writer.writerow([episode_index, frame_index, value])
+        if source_frame_indices is None:
+            writer.writerow(["episode_id", "frame_index", "value"])
+            for frame_index, value in zip(frame_indices, values, strict=True):
+                writer.writerow([episode_index, frame_index, value])
+        else:
+            writer.writerow(["episode_id", "frame_index", "source_frame_index", "value"])
+            for frame_index, source_frame_index, value in zip(
+                frame_indices, source_frame_indices, values, strict=True
+            ):
+                writer.writerow([episode_index, frame_index, source_frame_index, value])
     temporary_csv.replace(csv_path)
 
     try:
@@ -184,8 +223,9 @@ def _write_curve_artifacts(
         raise ImportError("Writing the value curve PNG requires matplotlib.") from exc
     figure, axis = plt.subplots(figsize=(10, 4.5))
     axis.plot(frame_indices, values, color="#2563eb", linewidth=2)
-    axis.set_title(f"WCM predicted value — episode {episode_index}")
-    axis.set_xlabel("frame_index")
+    direction = "reverse" if source_frame_indices is not None else "forward"
+    axis.set_title(f"WCM predicted value — episode {episode_index} ({direction})")
+    axis.set_xlabel("reverse playback step" if source_frame_indices is not None else "frame_index")
     axis.set_ylabel("value")
     axis.grid(alpha=0.25)
     figure.tight_layout()
@@ -227,6 +267,11 @@ def run() -> None:
             f"Checkpoint history_size={history_size} exceeds model.max_history={config.model.max_history}."
         )
 
+    frame_order = (
+        list(range(episode_length - 1, -1, -1))
+        if args.reverse_episode
+        else list(range(episode_length))
+    )
     frame_indices: list[int] = []
     values: list[float] = []
     resolved_instruction: str | None = None
@@ -236,6 +281,7 @@ def run() -> None:
         histories, masks, instruction = _episode_histories(
             read_frame=read_frame,
             frame_indices=batch_frames,
+            frame_order=frame_order,
             history_size=history_size,
             image_keys=config.data.image_keys,
             episode_index=args.episode_index,
@@ -264,6 +310,7 @@ def run() -> None:
         episode_index=args.episode_index,
         frame_indices=frame_indices,
         values=values,
+        source_frame_indices=frame_order if args.reverse_episode else None,
     )
     print(
         json.dumps(
@@ -272,6 +319,7 @@ def run() -> None:
                 "dataset_root": str(root),
                 "dataset_version": version,
                 "episode_id": args.episode_index,
+                "playback_direction": "reverse" if args.reverse_episode else "forward",
                 "instruction": resolved_instruction,
                 "history_size": history_size,
                 "episode_frames": episode_length,
